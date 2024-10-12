@@ -1,0 +1,43 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "react-app",
+    "react-app/jest",
+    "plugin:testing-library/react",
+    "plugin:jest-dom/recommended",
+    "prettier"
+  ],
+  "plugins": ["react", "simple-import-sort", "unused-imports", "jest-dom", "testing-library", "prettier"],
+  "rules": {
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "import/no-anonymous-default-export": "off",
+    "arrow-body-style": "warn",
+    "unused-imports/no-unused-imports": "warn",
+    "simple-import-sort/imports": [
+      "warn",
+      {
+        "groups": [
+          [
+            "^react",
+            "^@?\\w",
+            "^(@|components)(/.*|$)",
+            "^\\u0000",
+            "^\\.\\.(?!/?$)",
+            "^\\.\\./?$",
+            "^\\./(?=.*/)(?!/?$)",
+            "^\\.(?!/?$)",
+            "^\\./?$",
+            "^.+\\.?(css)$"
+          ]
+        ]
+      }
+    ]
+  },
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  }
+}
