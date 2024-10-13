@@ -1,6 +1,9 @@
+import AudioWaveform from './components/AudioWaveform';
+
 const EditPage = () => (
   <>
-    <h1>Edit here</h1>
+    <h1 className="edit-page__title">Edit Your Audio File</h1>
+    <AudioWaveform />
   </>
 );
 

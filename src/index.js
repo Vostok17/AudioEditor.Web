@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { FileContextProvider } from './common/components/UploadAudio/contexts/fileContext';
+import { FileContextProvider } from './common/contexts/fileContext';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

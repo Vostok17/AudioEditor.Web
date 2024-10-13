@@ -1,4 +1,4 @@
-import UploadAudio from '../../common/components/UploadAudio/UploadAudio';
+import UploadAudio from 'src/common/components/UploadAudio/UploadAudio';
 
 const HomePage = () => (
   <>

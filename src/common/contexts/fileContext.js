@@ -6,7 +6,7 @@ const FileContext = createContext({
 });
 
 const FileContextProvider = ({ children }) => {
-  const [fileURL, setFileURL] = useState('');
+  const [fileURL, setFileURL] = useState(null);
   return <FileContext.Provider value={{ fileURL, setFileURL }}>{children}</FileContext.Provider>;
 };
 
