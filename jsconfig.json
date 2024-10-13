@@ -4,10 +4,7 @@
     "module": "commonjs",
     "jsx": "preserve",
     "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*"]
-    },
     "checkJs": true
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }
