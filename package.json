@@ -26,6 +26,7 @@
     "redux-saga": "^1.3.0",
     "redux-thunk": "^3.1.0",
     "sass": "^1.79.5",
+    "wavesurfer.js": "^7.8.6",
     "web-vitals": "^4.2.3",
     "yup": "^1.4.0"
   },
