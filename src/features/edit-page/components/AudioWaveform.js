@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { FileContext } from 'src/common/contexts/fileContext';
 import wavesurfer from 'wavesurfer.js';
+import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 
 const AudioWaveform = () => {
   const wavesurferRef = useRef(null);
@@ -18,6 +19,8 @@ const AudioWaveform = () => {
           cursorColor: 'violet',
           waveColor: '#211027',
           progressColor: '#69207F',
+          // @ts-ignore
+          plugins: [TimelinePlugin.create()],
         }),
       );
     }
