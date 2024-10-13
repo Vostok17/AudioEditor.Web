@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { FileContextProvider } from './common/contexts/fileContext';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <FileContextProvider>
+      <App />
+    </FileContextProvider>
   </React.StrictMode>,
 );
 
