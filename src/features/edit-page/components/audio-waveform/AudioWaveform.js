@@ -19,6 +19,7 @@ const AudioWaveform = () => {
   const { fileURL } = useContext(FileContext);
   const [volume, setVolume] = useState(1);
   const [zoom, setZoom] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
   const { wavesurfer, isPlaying, isReady } = useWavesurfer({
     container: containerRef,
@@ -26,6 +27,7 @@ const AudioWaveform = () => {
     cursorColor: 'violet',
     waveColor: '#211027',
     progressColor: '#69207F',
+    responsive: true,
     url: fileURL,
     // @ts-ignore
     plugins: useMemo(() => [Timeline.create()], []),
@@ -65,6 +67,12 @@ const AudioWaveform = () => {
 
   const handleZoomSlider = e => {
     setZoom(e.target.value);
+  };
+
+  const handlePlaybackSpeedChange = e => {
+    const newSpeed = parseFloat(e.target.value);
+    setPlaybackSpeed(newSpeed);
+    wavesurfer && wavesurfer.setPlaybackRate(newSpeed);
   };
 
   useEffect(() => {
@@ -118,6 +126,18 @@ const AudioWaveform = () => {
           className="slider zoom-slider"
         />
         <AddCircle />
+      </div>
+      <div className="playback-speed-container">
+        <label htmlFor="playbackSpeed">Playback Speed: </label>
+        <input
+          type="range"
+          min="0.5"
+          max="2.0"
+          step="0.1"
+          value={playbackSpeed}
+          onChange={handlePlaybackSpeedChange}
+          className="slider playback-speed-slider"
+        />
       </div>
     </>
   );
