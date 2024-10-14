@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { FastForward, FastRewind, Pause, PlayArrow } from '@mui/icons-material';
+import { FastForward, FastRewind, Pause, PlayArrow, Start } from '@mui/icons-material';
 import { useWavesurfer } from '@wavesurfer/react';
 import { FileContext } from 'src/common/contexts/fileContext';
 import Timeline from 'wavesurfer.js/dist/plugins/timeline.esm.js';
@@ -33,6 +33,14 @@ const AudioWaveform = () => {
     wavesurfer && wavesurfer.skip(-5);
   }, [wavesurfer]);
 
+  const onMoveToStart = useCallback(() => {
+    wavesurfer && wavesurfer.seekTo(0);
+  }, [wavesurfer]);
+
+  const onMoveToEnd = useCallback(() => {
+    wavesurfer && wavesurfer.seekTo(1);
+  }, [wavesurfer]);
+
   useEffect(() => {
     if (wavesurfer) {
       // wsf.on('ready', () => {
@@ -47,12 +55,18 @@ const AudioWaveform = () => {
         <div ref={containerRef} />
       </div>
       <div className="controls-bar">
+        <button onClick={onMoveToStart}>
+          <Start style={{ transform: 'rotate(180deg)' }} />
+        </button>
         <button onClick={onSkipBackward}>
           <FastRewind />
         </button>
         <button onClick={onPlayPause}>{isPlaying ? <Pause /> : <PlayArrow />}</button>
         <button onClick={onSkipForward}>
           <FastForward />
+        </button>
+        <button onClick={onMoveToEnd}>
+          <Start />
         </button>
       </div>
     </>
