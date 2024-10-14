@@ -1,4 +1,4 @@
-import AudioWaveform from './components/AudioWaveform';
+import AudioWaveform from './components/audio-waveform/AudioWaveform';
 
 const EditPage = () => (
   <>
