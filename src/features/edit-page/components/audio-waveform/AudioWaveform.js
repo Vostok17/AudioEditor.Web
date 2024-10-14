@@ -1,5 +1,15 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { FastForward, FastRewind, Pause, PlayArrow, Start } from '@mui/icons-material';
+import {
+  AddCircle,
+  FastForward,
+  FastRewind,
+  Pause,
+  PlayArrow,
+  RemoveCircle,
+  Start,
+  VolumeOffRounded,
+  VolumeUpRounded,
+} from '@mui/icons-material';
 import { useWavesurfer } from '@wavesurfer/react';
 import { FileContext } from 'src/common/contexts/fileContext';
 import Timeline from 'wavesurfer.js/dist/plugins/timeline.esm.js';
@@ -7,9 +17,10 @@ import Timeline from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 const AudioWaveform = () => {
   const containerRef = useRef(null);
   const { fileURL } = useContext(FileContext);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [zoom, setZoom] = useState(1);
 
-  const { wavesurfer } = useWavesurfer({
+  const { wavesurfer, isPlaying, isReady } = useWavesurfer({
     container: containerRef,
     autoCenter: true,
     cursorColor: 'violet',
@@ -21,7 +32,6 @@ const AudioWaveform = () => {
   });
 
   const onPlayPause = useCallback(() => {
-    setIsPlaying(prev => !prev);
     wavesurfer && wavesurfer.playPause();
   }, [wavesurfer]);
 
@@ -49,6 +59,22 @@ const AudioWaveform = () => {
     }
   }, [wavesurfer]);
 
+  const handleVolumeSlider = e => {
+    setVolume(e.target.value);
+  };
+
+  const handleZoomSlider = e => {
+    setZoom(e.target.value);
+  };
+
+  useEffect(() => {
+    wavesurfer && wavesurfer.setVolume(volume);
+  }, [volume, wavesurfer]);
+
+  useEffect(() => {
+    isReady && wavesurfer.zoom(zoom);
+  }, [zoom, wavesurfer, isReady]);
+
   return (
     <>
       <div className="waveform-container">
@@ -68,6 +94,30 @@ const AudioWaveform = () => {
         <button onClick={onMoveToEnd}>
           <Start />
         </button>
+      </div>
+      <div className="volume-slide-container">
+        {volume > 0 ? <VolumeUpRounded /> : <VolumeOffRounded />}
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value={volume}
+          onChange={handleVolumeSlider}
+          className="slider volume-slider"
+        />
+      </div>
+      <div className="volume-slide-container">
+        <RemoveCircle />
+        <input
+          type="range"
+          min="1"
+          max="1000"
+          value={zoom}
+          onChange={handleZoomSlider}
+          className="slider zoom-slider"
+        />
+        <AddCircle />
       </div>
     </>
   );
