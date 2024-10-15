@@ -148,6 +148,21 @@ const AudioWaveform = () => {
     setBufferToPaste(copyBuffer);
   };
 
+  const handleDownload = async () => {
+    if (wavesurfer) {
+      const url = URL.createObjectURL(
+        new Blob([await encodeToWave(wavesurfer.getDecodedData())], { type: 'audio/wav' }),
+      );
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = 'your-audio.wav';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <>
       <div id="waveform"></div>
@@ -169,6 +184,7 @@ const AudioWaveform = () => {
       <button onClick={handleCut}>Cut</button>
       <button onClick={hanglePaste}>Paste</button>
       <button onClick={handleCopy}>Copy</button>
+      <button onClick={handleDownload}>Download</button>
       <div className="volume-slide-container">
         {volume > 0 ? <VolumeUpRounded /> : <VolumeOffRounded />}
         <input
