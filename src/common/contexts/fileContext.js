@@ -1,13 +1,13 @@
 import { createContext, useState } from 'react';
 
 const FileContext = createContext({
-  fileURL: '',
-  setFileURL: url => {},
+  fileUrl: '',
+  setFileUrl: url => {},
 });
 
 const FileContextProvider = ({ children }) => {
-  const [fileURL, setFileURL] = useState(null);
-  return <FileContext.Provider value={{ fileURL, setFileURL }}>{children}</FileContext.Provider>;
+  const [fileUrl, setFileUrl] = useState(null);
+  return <FileContext.Provider value={{ fileUrl, setFileUrl }}>{children}</FileContext.Provider>;
 };
 
 export { FileContext, FileContextProvider };

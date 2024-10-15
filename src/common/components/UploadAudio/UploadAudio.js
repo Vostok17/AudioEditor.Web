@@ -4,16 +4,16 @@ import { FileContext } from 'src/common/contexts/fileContext';
 
 const UploadAudio = () => {
   const inputFile = useRef(null);
-  const { setFileURL } = useContext(FileContext);
+  const { setFileUrl } = useContext(FileContext);
   const [file, setFile] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (file) {
-      setFileURL(file);
+      setFileUrl(file);
       navigate('/edit');
     }
-  }, [file, navigate, setFileURL]);
+  }, [file, navigate, setFileUrl]);
 
   const handleButtonClick = () => {
     inputFile.current.click();
