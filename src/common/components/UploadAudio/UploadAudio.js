@@ -1,6 +1,9 @@
 import { useContext, useEffect, useRef, useState } from 'react';
+import { Row } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { Container } from '@mui/material';
 import { FileContext } from 'src/common/contexts/fileContext';
+import './upload-audio.css';
 
 const UploadAudio = () => {
   const inputFile = useRef(null);
@@ -24,23 +27,26 @@ const UploadAudio = () => {
   };
 
   return (
-    <div className="upload-audio">
-      <i style={{ fontSize: '5em', color: '#531A65' }} className="material-icons">
-        library_music
-      </i>
-      <h1>Upload here!</h1>
-      <button className="upload-btn" onClick={handleButtonClick}>
-        Upload
-      </button>
-      <input
-        type="file"
-        id="file"
-        ref={inputFile}
-        style={{ display: 'none' }}
-        accept="audio/*"
-        onChange={handleFileUpload}
-      />
-    </div>
+    <>
+      <Container className="upload">
+        <Row className="mt-2">
+          <h1 className="upload-audio__header">Upload your audio here!</h1>
+        </Row>
+        <Row className="justify-content-center mt-3 md-col-2">
+          <button className="upload-audio__upload-btn glow-on-hover" onClick={handleButtonClick}>
+            Upload
+          </button>
+        </Row>
+        <input
+          type="file"
+          id="file"
+          ref={inputFile}
+          style={{ display: 'none' }}
+          accept="audio/*"
+          onChange={handleFileUpload}
+        />
+      </Container>
+    </>
   );
 };
 
