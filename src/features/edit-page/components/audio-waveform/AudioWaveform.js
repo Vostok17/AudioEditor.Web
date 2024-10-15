@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import {
   AddCircle,
   FastForward,
@@ -10,84 +10,105 @@ import {
   VolumeOffRounded,
   VolumeUpRounded,
 } from '@mui/icons-material';
-import { useWavesurfer } from '@wavesurfer/react';
 import { FileContext } from 'src/common/contexts/fileContext';
+import WaveSurfer from 'wavesurfer.js';
+import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import Timeline from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 
 const AudioWaveform = () => {
-  const containerRef = useRef(null);
-  const { fileURL } = useContext(FileContext);
+  const [wavesurfer, setWavesurfer] = useState(null);
+  const [regions, setRegions] = useState(null);
+
+  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
-  const { wavesurfer, isPlaying, isReady } = useWavesurfer({
-    container: containerRef,
-    autoCenter: true,
-    cursorColor: 'violet',
-    waveColor: '#211027',
-    progressColor: '#69207F',
-    responsive: true,
-    url: fileURL,
-    // @ts-ignore
-    plugins: useMemo(() => [Timeline.create()], []),
-  });
+  const { fileUrl } = useContext(FileContext);
+
+  useEffect(() => {
+    const regionsPlugin = RegionsPlugin.create();
+    const ws = WaveSurfer.create({
+      container: '#waveform',
+      cursorColor: 'violet',
+      waveColor: '#211027',
+      progressColor: '#69207F',
+      // @ts-ignore
+      plugins: [Timeline.create(), Hover.create(), regionsPlugin],
+    });
+
+    ws.on('play', () => setIsPlaying(true));
+    ws.on('pause', () => setIsPlaying(false));
+    ws.on('finish', () => setIsPlaying(false));
+
+    setWavesurfer(ws);
+    setRegions(regionsPlugin);
+    regionsPlugin.enableDragSelection({});
+
+    return () => {
+      ws.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    fileUrl && wavesurfer && wavesurfer.load(fileUrl);
+  }, [fileUrl, wavesurfer]);
+
+  useEffect(() => {
+    wavesurfer &&
+      wavesurfer.on('click', () => {
+        regions.clearRegions();
+      });
+
+    regions &&
+      regions.on('region-created', () => {
+        const existingRegions = regions.getRegions();
+        if (existingRegions.length > 1) {
+          existingRegions[0].remove();
+        }
+      });
+  }, [wavesurfer, regions]);
 
   const onPlayPause = useCallback(() => {
-    wavesurfer && wavesurfer.playPause();
+    wavesurfer.playPause();
   }, [wavesurfer]);
 
   const onSkipForward = useCallback(() => {
-    wavesurfer && wavesurfer.skip(5);
+    wavesurfer.skipForward();
   }, [wavesurfer]);
 
   const onSkipBackward = useCallback(() => {
-    wavesurfer && wavesurfer.skip(-5);
+    wavesurfer.skipBackward();
   }, [wavesurfer]);
 
   const onMoveToStart = useCallback(() => {
-    wavesurfer && wavesurfer.seekTo(0);
+    wavesurfer.seekTo(0);
   }, [wavesurfer]);
 
   const onMoveToEnd = useCallback(() => {
-    wavesurfer && wavesurfer.seekTo(1);
-  }, [wavesurfer]);
-
-  useEffect(() => {
-    if (wavesurfer) {
-      // wsf.on('ready', () => {
-      //   wsf.play();
-      // });
-    }
+    wavesurfer.seekTo(1);
   }, [wavesurfer]);
 
   const handleVolumeSlider = e => {
     setVolume(e.target.value);
+    wavesurfer.setVolume(volume);
   };
 
   const handleZoomSlider = e => {
     setZoom(e.target.value);
+    wavesurfer.zoom(zoom);
   };
 
   const handlePlaybackSpeedChange = e => {
     const newSpeed = parseFloat(e.target.value);
     setPlaybackSpeed(newSpeed);
-    wavesurfer && wavesurfer.setPlaybackRate(newSpeed);
+    wavesurfer.setPlaybackRate(newSpeed);
   };
-
-  useEffect(() => {
-    wavesurfer && wavesurfer.setVolume(volume);
-  }, [volume, wavesurfer]);
-
-  useEffect(() => {
-    isReady && wavesurfer.zoom(zoom);
-  }, [zoom, wavesurfer, isReady]);
 
   return (
     <>
-      <div className="waveform-container">
-        <div ref={containerRef} />
-      </div>
+      <div id="waveform"></div>
       <div className="controls-bar">
         <button onClick={onMoveToStart}>
           <Start style={{ transform: 'rotate(180deg)' }} />
