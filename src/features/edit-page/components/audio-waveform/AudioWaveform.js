@@ -52,13 +52,21 @@ const AudioWaveform = () => {
   }, []);
 
   useEffect(() => {
-    wavesurfer && fileUrl && wavesurfer.load(fileUrl);
+    fileUrl && wavesurfer && wavesurfer.load(fileUrl);
   }, [fileUrl, wavesurfer]);
 
   useEffect(() => {
+    wavesurfer &&
+      wavesurfer.on('click', () => {
+        regions.clearRegions();
+      });
+
     regions &&
-      regions.on('region-created', region => {
-        console.log('region created', region);
+      regions.on('region-created', () => {
+        const existingRegions = regions.getRegions();
+        if (existingRegions.length > 1) {
+          existingRegions[0].remove();
+        }
       });
   }, [wavesurfer, regions]);
 
