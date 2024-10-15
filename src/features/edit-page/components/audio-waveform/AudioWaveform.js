@@ -11,19 +11,27 @@ import {
   VolumeUpRounded,
 } from '@mui/icons-material';
 import { FileContext } from 'src/common/contexts/fileContext';
+import { copy, cut, encodeToWave, paste } from 'src/common/utils/audioBuffer';
 import WaveSurfer from 'wavesurfer.js';
-import Hover from 'wavesurfer.js/dist/plugins/hover.esm.js';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
-import Timeline from 'wavesurfer.js/dist/plugins/timeline.esm.js';
+import Hover from 'wavesurfer.js/dist/plugins/hover.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
+import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
 
 const AudioWaveform = () => {
+  /**
+   * @type {[WaveSurfer|null, Function]} wavesurfer
+   */
   const [wavesurfer, setWavesurfer] = useState(null);
+  /**
+   * @type {[RegionsPlugin|null, Function]} regions
+   */
   const [regions, setRegions] = useState(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [bufferToPaste, setBufferToPaste] = useState(null);
 
   const { fileUrl } = useContext(FileContext);
 
@@ -34,7 +42,8 @@ const AudioWaveform = () => {
       cursorColor: 'violet',
       waveColor: '#211027',
       progressColor: '#69207F',
-      // @ts-ignore
+      splitChannels: true,
+      sampleRate: 44100,
       plugins: [Timeline.create(), Hover.create(), regionsPlugin],
     });
 
@@ -75,11 +84,11 @@ const AudioWaveform = () => {
   }, [wavesurfer]);
 
   const onSkipForward = useCallback(() => {
-    wavesurfer.skipForward();
+    wavesurfer.skip(5);
   }, [wavesurfer]);
 
   const onSkipBackward = useCallback(() => {
-    wavesurfer.skipBackward();
+    wavesurfer.skip(-5);
   }, [wavesurfer]);
 
   const onMoveToStart = useCallback(() => {
@@ -106,6 +115,39 @@ const AudioWaveform = () => {
     wavesurfer.setPlaybackRate(newSpeed);
   };
 
+  const handleCut = async () => {
+    const region = regions.getRegions()[0];
+    const start = region.start;
+    const end = region.end;
+    console.log(start, end);
+
+    const { cutBuffer, remainingBuffer } = cut(wavesurfer.getDecodedData(), start, end);
+    setBufferToPaste(cutBuffer);
+
+    const wavBlob = new Blob([await encodeToWave(remainingBuffer)], { type: 'audio/wav' });
+    wavesurfer.loadBlob(wavBlob);
+    setIsPlaying(false);
+  };
+
+  const hanglePaste = async () => {
+    const time = wavesurfer.getCurrentTime();
+
+    const combinedBuffer = paste(wavesurfer.getDecodedData(), bufferToPaste, time);
+
+    const wavBlob = new Blob([await encodeToWave(combinedBuffer)], { type: 'audio/wav' });
+    wavesurfer.loadBlob(wavBlob);
+  };
+
+  const handleCopy = async () => {
+    const region = regions.getRegions()[0];
+    const start = region.start;
+    const end = region.end;
+    console.log(start, end);
+
+    const copyBuffer = copy(wavesurfer.getDecodedData(), start, end);
+    setBufferToPaste(copyBuffer);
+  };
+
   return (
     <>
       <div id="waveform"></div>
@@ -124,6 +166,9 @@ const AudioWaveform = () => {
           <Start />
         </button>
       </div>
+      <button onClick={handleCut}>Cut</button>
+      <button onClick={hanglePaste}>Paste</button>
+      <button onClick={handleCopy}>Copy</button>
       <div className="volume-slide-container">
         {volume > 0 ? <VolumeUpRounded /> : <VolumeOffRounded />}
         <input
