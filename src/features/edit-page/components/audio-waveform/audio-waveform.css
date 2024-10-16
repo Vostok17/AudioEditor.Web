@@ -1,0 +1,58 @@
+.controls-bar {
+  display: flex;
+  justify-content: center;
+}
+
+.controls-bar__edit button {
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.controls-bar button {
+  margin: 0 0.2em;
+}
+
+.controls-bar__button {
+  margin: 0 0.5em;
+}
+
+button i {
+  font-size: 10em;
+}
+
+.sliders-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.sliders-container__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sliders-container__slider {
+  width: 100%;
+  margin: 0 1rem;
+}
+
+.sliders-container__label {
+  display: flex;
+  width: 8rem;
+  align-items: center;
+  justify-content: flex-start;
+  margin-right: 1rem;
+  font-size: 1.5rem;
+}
+
+.sliders-container__icon {
+  font-size: 1.8rem;
+}
+
+.download-btn {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
