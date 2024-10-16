@@ -75,9 +75,11 @@ const useWavesurfer = containerId => {
   const handlePaste = async () => {
     if (!wavesurfer || !bufferToPaste) return;
     const time = wavesurfer.getCurrentTime();
-    const combinedBuffer = paste(wavesurfer.getDecodedData(), bufferToPaste, time);
-    const wavBlob = new Blob([await encodeToWave(combinedBuffer)], { type: 'audio/wav' });
-    wavesurfer.loadBlob(wavBlob);
+    if (wavesurfer.getDecodedData()) {
+      const combinedBuffer = paste(wavesurfer.getDecodedData(), bufferToPaste, time);
+      const wavBlob = new Blob([await encodeToWave(combinedBuffer)], { type: 'audio/wav' });
+      wavesurfer.loadBlob(wavBlob);
+    }
   };
 
   const handleCopy = async () => {
