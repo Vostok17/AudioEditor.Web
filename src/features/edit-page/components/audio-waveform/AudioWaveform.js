@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Container, Row } from 'react-bootstrap';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile } from '@ffmpeg/util';
 import {
   DownloadOutlined,
   FastForward,
@@ -19,6 +17,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 import Slider from '@mui/material/Slider';
 import { Button, Typography } from 'antd';
+import useFFmpeg from 'src/common/hooks/useFFmpeg';
 import useWavesurfer from 'src/common/hooks/useWavesurfer';
 import { encodeToWave } from 'src/common/utils/audioBuffer';
 import './audio-waveform.css';
@@ -36,8 +35,7 @@ const AudioWaveform = () => {
   const [zoom, setZoom] = useState(1);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
-  const ffmpegRef = useRef(new FFmpeg());
-  const messageRef = useRef(null);
+  const { applyEffect } = useFFmpeg();
 
   useEffect(() => {
     if (!wavesurfer) return;
@@ -56,73 +54,25 @@ const AudioWaveform = () => {
     };
     document.addEventListener('click', handleClickOutside);
 
-    const loadFFmpeg = async () => {
-      const ffmpeg = ffmpegRef.current;
-      ffmpeg.on('log', ({ message }) => {
-        if (messageRef.current) messageRef.current.innerHTML = message;
-      });
-      await ffmpeg.load();
-      console.log('ffmpeg loaded');
-    };
-
-    loadFFmpeg();
-
     return () => {
       document.removeEventListener('click', handleClickOutside);
       wavesurfer.destroy();
     };
   }, [regions, wavesurfer]);
 
-  const applyEffect = async () => {
+  const handleEffectApply = async () => {
     if (!wavesurfer) return;
+    const url = URL.createObjectURL(new Blob([await encodeToWave(wavesurfer.getDecodedData())], { type: 'audio/wav' }));
     const existingRegions = regions.getRegions();
 
-    // Apply to region if it exists, otherwise apply to the whole audio
-    let start, end;
-    const region = existingRegions[0];
-    start = region.start;
-    end = region.end;
+    let data;
+    if (existingRegions.length === 0) {
+      data = await applyEffect(url);
+    } else {
+      const region = existingRegions[0];
+      data = await applyEffect(url, region.start, region.end);
+    }
 
-    // Create url for the wavesurfer's audio source
-    const url = URL.createObjectURL(new Blob([await encodeToWave(wavesurfer.getDecodedData())], { type: 'audio/wav' }));
-
-    // Apply filter
-    const ffmpeg = ffmpegRef.current;
-    await ffmpeg.writeFile('input.wav', await fetchFile(url));
-
-    // Extract the selected fragment
-    await ffmpeg.exec([
-      '-i',
-      'input.wav',
-      '-ss',
-      start.toString(),
-      '-to',
-      end.toString(),
-      '-c',
-      'copy',
-      'fragment.wav',
-    ]);
-
-    // Apply reverb effect to the extracted fragment
-    await ffmpeg.exec(['-i', 'fragment.wav', '-af', 'aecho=0.8:0.88:60:0.4', 'reverbed_fragment.wav']);
-
-    // Merge the modified fragment back into the original audio
-    await ffmpeg.exec([
-      '-i',
-      'input.wav',
-      '-i',
-      'reverbed_fragment.wav',
-      '-filter_complex',
-      `[0:a]atrim=end=${start},asetpts=PTS-STARTPTS[part1];[0:a]atrim=start=${end},asetpts=PTS-STARTPTS[part3];[part1][1:a][part3]concat=n=3:v=0:a=1[out]`,
-      '-map',
-      '[out]',
-      'output.wav',
-    ]);
-
-    const fileData = await ffmpeg.readFile('output.wav');
-
-    // @ts-ignore
-    const data = new Uint8Array(fileData);
     wavesurfer.loadBlob(new Blob([data.buffer], { type: 'audio/wav' }));
   };
 
@@ -146,7 +96,7 @@ const AudioWaveform = () => {
     <>
       <Container style={{ maxWidth: '100vw' }}>
         <>
-          <button onClick={() => applyEffect()}>Transcode webm to mp4</button>
+          <button onClick={() => handleEffectApply()}>Apply some effect button</button>
         </>
         <Row className="mb-5">
           <div id="waveform"></div>
