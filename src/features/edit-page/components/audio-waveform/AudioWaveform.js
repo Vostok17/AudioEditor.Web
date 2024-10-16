@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Container, Row } from 'react-bootstrap';
 import {
   DownloadOutlined,
@@ -17,6 +17,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 import Slider from '@mui/material/Slider';
 import { Button, Typography } from 'antd';
+import useClickOutside from 'src/common/hooks/useClickOutside';
 import useFFmpeg from 'src/common/hooks/useFFmpeg';
 import useWavesurfer from 'src/common/hooks/useWavesurfer';
 import { encodeToWave } from 'src/common/utils/audioBuffer';
@@ -29,6 +30,7 @@ const AudioWaveform = () => {
   // @ts-ignore
   const { wavesurfer, regions, handleCopy, handleCut, handlePaste, handleDownload, bufferToPaste } =
     useWavesurfer('#waveform');
+  const wavesurferRef = useRef(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -36,6 +38,8 @@ const AudioWaveform = () => {
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
   const { applyEffect } = useFFmpeg();
+
+  useClickOutside(wavesurferRef, () => regions.clearRegions());
 
   useEffect(() => {
     if (!wavesurfer) return;
@@ -46,16 +50,7 @@ const AudioWaveform = () => {
 
     regions.enableDragSelection({});
 
-    const handleClickOutside = event => {
-      const waveformContainer = document.getElementById('waveform');
-      if (waveformContainer && !waveformContainer.contains(event.target)) {
-        regions.clearRegions();
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-
     return () => {
-      document.removeEventListener('click', handleClickOutside);
       wavesurfer.destroy();
     };
   }, [regions, wavesurfer]);
@@ -99,7 +94,7 @@ const AudioWaveform = () => {
           <button onClick={() => handleEffectApply()}>Apply some effect button</button>
         </>
         <Row className="mb-5">
-          <div id="waveform"></div>
+          <div ref={wavesurferRef} id="waveform"></div>
         </Row>
         <Row className="md-col-3 mb-3">
           <div className="controls-bar">
