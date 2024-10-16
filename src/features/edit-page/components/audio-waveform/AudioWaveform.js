@@ -135,10 +135,10 @@ const AudioWaveform = () => {
 
   const handleCut = async () => {
     if (!wavesurfer) return;
+    if (regions.getRegions().length === 0) return;
     const region = regions.getRegions()[0];
     const start = region.start;
     const end = region.end;
-    console.log(start, end);
 
     const { cutBuffer, remainingBuffer } = cut(wavesurfer.getDecodedData(), start, end);
     setBufferToPaste(cutBuffer);
@@ -159,6 +159,7 @@ const AudioWaveform = () => {
 
   const handleCopy = async () => {
     if (!wavesurfer) return;
+    if (regions.getRegions().length === 0) return;
     const region = regions.getRegions()[0];
     const start = region.start;
     const end = region.end;
