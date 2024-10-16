@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { copy, cut, encodeToWave, paste } from 'src/common/utils/audioBuffer';
 import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.js';
@@ -11,6 +12,7 @@ const useWavesurfer = containerId => {
   const [regions, setRegions] = useState(null);
   const { fileUrl } = useContext(FileContext);
   const [bufferToPaste, setBufferToPaste] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const regionsPlugin = RegionsPlugin.create();
@@ -25,21 +27,20 @@ const useWavesurfer = containerId => {
       plugins: [Timeline.create(), Hover.create(), regionsPlugin],
     });
 
-    if (!fileUrl) {
-      ws.load(fileUrl);
-    }
-
     setWavesurfer(ws);
     setRegions(regionsPlugin);
 
     return () => {
       ws.destroy();
     };
-  }, [containerId, fileUrl]);
+  }, [containerId]);
 
   useEffect(() => {
     fileUrl && wavesurfer && wavesurfer.load(fileUrl);
-  }, [fileUrl, wavesurfer]);
+    if (!fileUrl) {
+      navigate('/');
+    }
+  }, [fileUrl, navigate, wavesurfer]);
 
   useEffect(() => {
     wavesurfer &&
