@@ -117,7 +117,13 @@ const AudioWaveform = () => {
         </Row>
         <Row className="md-col-3 mb-3">
           <div className="controls-bar controls-bar__edit">
-            <Button onClick={handleCut}>
+            <Button
+              onClick={() => {
+                handleCut();
+                setIsPlaying(false);
+                wavesurfer.seekTo(0);
+              }}
+            >
               <ContentCutIcon />
               Cut
             </Button>
