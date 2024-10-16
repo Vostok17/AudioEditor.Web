@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Container, Row } from 'react-bootstrap';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile } from '@ffmpeg/util';
@@ -19,59 +19,39 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 import Slider from '@mui/material/Slider';
 import { Button, Typography } from 'antd';
-import { FileContext } from 'src/common/contexts/fileContext';
-import { copy, cut, encodeToWave, paste } from 'src/common/utils/audioBuffer';
-import WaveSurfer from 'wavesurfer.js';
-import Hover from 'wavesurfer.js/dist/plugins/hover.js';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
-import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
+import useWavesurfer from 'src/common/hooks/useWavesurfer';
+import { encodeToWave } from 'src/common/utils/audioBuffer';
 import './audio-waveform.css';
 
 const AudioWaveform = () => {
   /**
-   * @type {[WaveSurfer|null, Function]} wavesurfer
+   * @type {{ wavesurfer: WaveSurfer|null, regions: RegionsPlugin|null }}
    */
-  const [wavesurfer, setWavesurfer] = useState(null);
-  /**
-   * @type {[RegionsPlugin|null, Function]} regions
-   */
-  const [regions, setRegions] = useState(null);
+  // @ts-ignore
+  const { wavesurfer, regions, handleCopy, handleCut, handlePaste, handleDownload, bufferToPaste } =
+    useWavesurfer('#waveform');
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-  const [bufferToPaste, setBufferToPaste] = useState(null);
-
-  const { fileUrl } = useContext(FileContext);
 
   const ffmpegRef = useRef(new FFmpeg());
   const messageRef = useRef(null);
 
   useEffect(() => {
-    const regionsPlugin = RegionsPlugin.create();
-    const ws = WaveSurfer.create({
-      container: '#waveform',
-      cursorColor: 'violet',
-      waveColor: '#211027',
-      progressColor: '#69207F',
-      splitChannels: true,
-      sampleRate: 44100,
-      plugins: [Timeline.create(), Hover.create(), regionsPlugin],
-    });
+    if (!wavesurfer) return;
 
-    ws.on('play', () => setIsPlaying(true));
-    ws.on('pause', () => setIsPlaying(false));
-    ws.on('finish', () => setIsPlaying(false));
+    wavesurfer.on('play', () => setIsPlaying(true));
+    wavesurfer.on('pause', () => setIsPlaying(false));
+    wavesurfer.on('finish', () => setIsPlaying(false));
 
-    setWavesurfer(ws);
-    setRegions(regionsPlugin);
-    regionsPlugin.enableDragSelection({});
+    regions.enableDragSelection({});
 
     const handleClickOutside = event => {
       const waveformContainer = document.getElementById('waveform');
       if (waveformContainer && !waveformContainer.contains(event.target)) {
-        regionsPlugin.clearRegions();
+        regions.clearRegions();
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -89,9 +69,9 @@ const AudioWaveform = () => {
 
     return () => {
       document.removeEventListener('click', handleClickOutside);
-      ws.destroy();
+      wavesurfer.destroy();
     };
-  }, []);
+  }, [regions, wavesurfer]);
 
   const applyEffect = async () => {
     if (!wavesurfer) return;
@@ -146,45 +126,6 @@ const AudioWaveform = () => {
     wavesurfer.loadBlob(new Blob([data.buffer], { type: 'audio/wav' }));
   };
 
-  useEffect(() => {
-    fileUrl && wavesurfer && wavesurfer.load(fileUrl);
-  }, [fileUrl, wavesurfer]);
-
-  useEffect(() => {
-    wavesurfer &&
-      wavesurfer.on('click', () => {
-        regions.clearRegions();
-      });
-
-    regions &&
-      regions.on('region-created', () => {
-        const existingRegions = regions.getRegions();
-        if (existingRegions.length > 1) {
-          existingRegions[0].remove();
-        }
-      });
-  }, [wavesurfer, regions]);
-
-  const onPlayPause = useCallback(() => {
-    wavesurfer.playPause();
-  }, [wavesurfer]);
-
-  const onSkipForward = useCallback(() => {
-    wavesurfer.skip(5);
-  }, [wavesurfer]);
-
-  const onSkipBackward = useCallback(() => {
-    wavesurfer.skip(-5);
-  }, [wavesurfer]);
-
-  const onMoveToStart = useCallback(() => {
-    wavesurfer.seekTo(0);
-  }, [wavesurfer]);
-
-  const onMoveToEnd = useCallback(() => {
-    wavesurfer.seekTo(1);
-  }, [wavesurfer]);
-
   const handleVolumeSlider = e => {
     setVolume(e.target.value);
     wavesurfer.setVolume(volume);
@@ -201,56 +142,6 @@ const AudioWaveform = () => {
     wavesurfer.setPlaybackRate(newSpeed);
   };
 
-  const handleCut = async () => {
-    if (!wavesurfer) return;
-    if (regions.getRegions().length === 0) return;
-    const region = regions.getRegions()[0];
-    const start = region.start;
-    const end = region.end;
-
-    const { cutBuffer, remainingBuffer } = cut(wavesurfer.getDecodedData(), start, end);
-    setBufferToPaste(cutBuffer);
-
-    const wavBlob = new Blob([await encodeToWave(remainingBuffer)], { type: 'audio/wav' });
-    wavesurfer.loadBlob(wavBlob);
-    setIsPlaying(false);
-    regions.clearRegions();
-  };
-
-  const hanglePaste = async () => {
-    if (!wavesurfer || !bufferToPaste) return;
-    const time = wavesurfer.getCurrentTime();
-    const combinedBuffer = paste(wavesurfer.getDecodedData(), bufferToPaste, time);
-    const wavBlob = new Blob([await encodeToWave(combinedBuffer)], { type: 'audio/wav' });
-    wavesurfer.loadBlob(wavBlob);
-  };
-
-  const handleCopy = async () => {
-    if (!wavesurfer) return;
-    if (regions.getRegions().length === 0) return;
-    const region = regions.getRegions()[0];
-    const start = region.start;
-    const end = region.end;
-
-    const copyBuffer = copy(wavesurfer.getDecodedData(), start, end);
-    setBufferToPaste(copyBuffer);
-  };
-
-  const handleDownload = async () => {
-    if (wavesurfer) {
-      const url = URL.createObjectURL(
-        new Blob([await encodeToWave(wavesurfer.getDecodedData())], { type: 'audio/wav' }),
-      );
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = 'your-audio.wav';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-    }
-  };
-
   return (
     <>
       <Container style={{ maxWidth: '100vw' }}>
@@ -262,19 +153,19 @@ const AudioWaveform = () => {
         </Row>
         <Row className="md-col-3 mb-3">
           <div className="controls-bar">
-            <Button type="primary" onClick={onMoveToStart}>
+            <Button type="primary" onClick={() => wavesurfer.seekTo(0)}>
               <Start style={{ transform: 'rotate(180deg)' }} />
             </Button>
-            <Button type="primary" onClick={onSkipBackward}>
+            <Button type="primary" onClick={() => wavesurfer.skip(-5)}>
               <FastRewind />
             </Button>
-            <Button type="primary" onClick={onPlayPause}>
+            <Button type="primary" onClick={() => wavesurfer.playPause()}>
               {isPlaying ? <Pause /> : <PlayArrow />}
             </Button>
-            <Button type="primary" onClick={onSkipForward}>
+            <Button type="primary" onClick={() => wavesurfer.skip(5)}>
               <FastForward />
             </Button>
-            <Button type="primary" onClick={onMoveToEnd}>
+            <Button type="primary" onClick={() => wavesurfer.seekTo(1)}>
               <Start />
             </Button>
           </div>
@@ -289,7 +180,7 @@ const AudioWaveform = () => {
               <ContentCopyIcon />
               Copy
             </Button>
-            <Button onClick={hanglePaste} disabled={bufferToPaste === null}>
+            <Button onClick={handlePaste} disabled={bufferToPaste === null}>
               <ContentPasteGoIcon />
               Paste
             </Button>
