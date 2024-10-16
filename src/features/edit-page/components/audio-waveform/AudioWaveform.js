@@ -63,7 +63,17 @@ const AudioWaveform = () => {
     setRegions(regionsPlugin);
     regionsPlugin.enableDragSelection({});
 
+    const handleClickOutside = event => {
+      const waveformContainer = document.getElementById('waveform');
+      if (waveformContainer && !waveformContainer.contains(event.target)) {
+        console.log('Clicked outside of WaveSurfer container');
+        regionsPlugin.clearRegions();
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+
     return () => {
+      document.removeEventListener('click', handleClickOutside);
       ws.destroy();
     };
   }, []);
@@ -136,6 +146,7 @@ const AudioWaveform = () => {
     const wavBlob = new Blob([await encodeToWave(remainingBuffer)], { type: 'audio/wav' });
     wavesurfer.loadBlob(wavBlob);
     setIsPlaying(false);
+    regions.clearRegions();
   };
 
   const hanglePaste = async () => {
