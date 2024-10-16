@@ -1,3 +1,16 @@
+.edit-page {
+  min-width: 100vw;
+  min-height: 100vh;
+  margin-top: 0 !important;
+  background: #a1ffce; /* fallback for old browsers */
+  background: linear-gradient(to bottom, #faffd1, #a1ffce); /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(
+    to bottom,
+    #faffd1,
+    #a1ffce
+  ); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+
 .edit-page__title {
   margin: 1em 0;
   text-align: center;

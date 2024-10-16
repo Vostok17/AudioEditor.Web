@@ -1,21 +1,29 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
+import { Container, Row } from 'react-bootstrap';
 import {
-  AddCircle,
+  DownloadOutlined,
   FastForward,
   FastRewind,
   Pause,
   PlayArrow,
-  RemoveCircle,
+  PlayCircleOutlined,
   Start,
   VolumeOffRounded,
   VolumeUpRounded,
+  ZoomOutOutlined,
 } from '@mui/icons-material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCutIcon from '@mui/icons-material/ContentCut';
+import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
+import Slider from '@mui/material/Slider';
+import { Button, Typography } from 'antd';
 import { FileContext } from 'src/common/contexts/fileContext';
 import { copy, cut, encodeToWave, paste } from 'src/common/utils/audioBuffer';
 import WaveSurfer from 'wavesurfer.js';
 import Hover from 'wavesurfer.js/dist/plugins/hover.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 import Timeline from 'wavesurfer.js/dist/plugins/timeline.js';
+import './audio-waveform.css';
 
 const AudioWaveform = () => {
   /**
@@ -116,6 +124,7 @@ const AudioWaveform = () => {
   };
 
   const handleCut = async () => {
+    if (!wavesurfer) return;
     const region = regions.getRegions()[0];
     const start = region.start;
     const end = region.end;
@@ -130,15 +139,15 @@ const AudioWaveform = () => {
   };
 
   const hanglePaste = async () => {
+    if (!wavesurfer || !bufferToPaste) return;
     const time = wavesurfer.getCurrentTime();
-
     const combinedBuffer = paste(wavesurfer.getDecodedData(), bufferToPaste, time);
-
     const wavBlob = new Blob([await encodeToWave(combinedBuffer)], { type: 'audio/wav' });
     wavesurfer.loadBlob(wavBlob);
   };
 
   const handleCopy = async () => {
+    if (!wavesurfer) return;
     const region = regions.getRegions()[0];
     const start = region.start;
     const end = region.end;
@@ -165,62 +174,85 @@ const AudioWaveform = () => {
 
   return (
     <>
-      <div id="waveform"></div>
-      <div className="controls-bar">
-        <button onClick={onMoveToStart}>
-          <Start style={{ transform: 'rotate(180deg)' }} />
-        </button>
-        <button onClick={onSkipBackward}>
-          <FastRewind />
-        </button>
-        <button onClick={onPlayPause}>{isPlaying ? <Pause /> : <PlayArrow />}</button>
-        <button onClick={onSkipForward}>
-          <FastForward />
-        </button>
-        <button onClick={onMoveToEnd}>
-          <Start />
-        </button>
-      </div>
-      <button onClick={handleCut}>Cut</button>
-      <button onClick={hanglePaste}>Paste</button>
-      <button onClick={handleCopy}>Copy</button>
-      <button onClick={handleDownload}>Download</button>
-      <div className="volume-slide-container">
-        {volume > 0 ? <VolumeUpRounded /> : <VolumeOffRounded />}
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={volume}
-          onChange={handleVolumeSlider}
-          className="slider volume-slider"
-        />
-      </div>
-      <div className="volume-slide-container">
-        <RemoveCircle />
-        <input
-          type="range"
-          min="1"
-          max="1000"
-          value={zoom}
-          onChange={handleZoomSlider}
-          className="slider zoom-slider"
-        />
-        <AddCircle />
-      </div>
-      <div className="playback-speed-container">
-        <label htmlFor="playbackSpeed">Playback Speed: </label>
-        <input
-          type="range"
-          min="0.5"
-          max="2.0"
-          step="0.1"
-          value={playbackSpeed}
-          onChange={handlePlaybackSpeedChange}
-          className="slider playback-speed-slider"
-        />
-      </div>
+      <Container style={{ maxWidth: '100vw' }}>
+        <Row className="mb-5">
+          <div id="waveform"></div>
+        </Row>
+        <Row className="md-col-3 mb-3">
+          <div className="controls-bar">
+            <Button type="primary" onClick={onMoveToStart}>
+              <Start style={{ transform: 'rotate(180deg)' }} />
+            </Button>
+            <Button type="primary" onClick={onSkipBackward}>
+              <FastRewind />
+            </Button>
+            <Button type="primary" onClick={onPlayPause}>
+              {isPlaying ? <Pause /> : <PlayArrow />}
+            </Button>
+            <Button type="primary" onClick={onSkipForward}>
+              <FastForward />
+            </Button>
+            <Button type="primary" onClick={onMoveToEnd}>
+              <Start />
+            </Button>
+          </div>
+        </Row>
+        <Row className="md-col-3 mb-3">
+          <div className="controls-bar controls-bar__edit">
+            <Button onClick={handleCut}>
+              <ContentCutIcon />
+              Cut
+            </Button>
+            <Button onClick={handleCopy}>
+              <ContentCopyIcon />
+              Copy
+            </Button>
+            <Button onClick={hanglePaste} disabled={bufferToPaste === null}>
+              <ContentPasteGoIcon />
+              Paste
+            </Button>
+          </div>
+        </Row>
+        <Button onClick={handleDownload} type="primary" icon={<DownloadOutlined />} className="download-btn">
+          Download
+        </Button>
+        <Row className="controls-bar__sliders">
+          <div className="sliders-container__row">
+            <div className="sliders-container__label">
+              <Typography className="sliders-container__label">Volume</Typography>
+              {volume > 0 ? (
+                <VolumeUpRounded className="sliders-container__icon" />
+              ) : (
+                <VolumeOffRounded className="sliders-container__icon" />
+              )}
+            </div>
+            <Slider sx={{ width: '20%' }} min={0} max={1} step={0.001} value={volume} onChange={handleVolumeSlider} />
+          </div>
+          <div className="sliders-container__row">
+            <div className="sliders-container__label">
+              <Typography className="sliders-container__label">Zoom</Typography>
+              <ZoomOutOutlined className="sliders-container__icon" />
+            </div>
+            <Slider sx={{ width: '20%' }} min={1} max={1000} value={zoom} onChange={handleZoomSlider} />
+          </div>
+          <div className="sliders-container__row">
+            <div className="sliders-container__label">
+              <Typography className="sliders-container__label">Speed</Typography>
+              <PlayCircleOutlined className="sliders-container__icon" />
+            </div>
+            <Slider
+              sx={{ width: '20%' }}
+              valueLabelDisplay="auto"
+              min={0.5}
+              max={2.0}
+              step={0.1}
+              marks
+              value={playbackSpeed}
+              onChange={handlePlaybackSpeedChange}
+            />
+          </div>
+        </Row>
+      </Container>
     </>
   );
 };
