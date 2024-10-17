@@ -23,7 +23,7 @@ import useWavesurfer from 'src/common/hooks/useWavesurfer';
 import { encodeToWave } from 'src/common/utils/audioBuffer';
 import './audio-waveform.css';
 
-const AudioWaveform = () => {
+const AudioWaveform = ({ effect, onEffectApplied }) => {
   /**
    * @type {{ wavesurfer: WaveSurfer|null, regions: RegionsPlugin|null }}
    */
@@ -55,17 +55,18 @@ const AudioWaveform = () => {
     };
   }, [regions, wavesurfer]);
 
-  const handleEffectApply = async () => {
+  const handleEffectApply = async effect => {
+    console.log(effect.effect);
     if (!wavesurfer) return;
     const url = URL.createObjectURL(new Blob([await encodeToWave(wavesurfer.getDecodedData())], { type: 'audio/wav' }));
     const existingRegions = regions.getRegions();
 
     let data;
     if (existingRegions.length === 0) {
-      data = await applyEffect(url);
+      data = await applyEffect(url, effect);
     } else {
       const region = existingRegions[0];
-      data = await applyEffect(url, region.start, region.end);
+      data = await applyEffect(url, effect, region.start, region.end);
     }
 
     wavesurfer.loadBlob(new Blob([data.buffer], { type: 'audio/wav' }));
@@ -89,10 +90,19 @@ const AudioWaveform = () => {
 
   return (
     <>
-      <Container style={{ maxWidth: '100vw' }}>
-        <>
-          <button onClick={() => handleEffectApply()}>Apply some effect button</button>
-        </>
+      <Container>
+        <Button
+          type="primary"
+          className="mt-4 mb-3"
+          disabled={!effect}
+          onClick={() => {
+            handleEffectApply(effect);
+            onEffectApplied();
+          }}
+        >
+          Apply
+        </Button>
+
         <Row className="mb-5">
           <div ref={wavesurferRef} id="waveform"></div>
         </Row>

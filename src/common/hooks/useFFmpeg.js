@@ -11,8 +11,16 @@ const useFFmpeg = () => {
     console.log('ffmpeg loaded');
   }, []);
 
-  const applyEffect = async (sourceUrl, start = null, end = null) => {
-    // Apply filter
+  const effects = {
+    reverb: 'aecho=0.8:0.88:60:0.4',
+    echo: 'aecho=0.8:0.9:1000:0.3',
+    normalize: 'dynaudnorm',
+    bassBoost: 'bass=g=20',
+    trebleBoost: 'treble=g=5',
+    chorus: 'chorus=0.7:0.9:55:0.4:0.25:2',
+  };
+
+  const applyEffect = async (sourceUrl, effect, start = null, end = null) => {
     const ffmpeg = ffmpegRef.current;
     await ffmpeg.writeFile('input.wav', await fetchFile(sourceUrl));
 
@@ -31,14 +39,14 @@ const useFFmpeg = () => {
       ]);
 
       // Apply reverb effect to the extracted fragment
-      await ffmpeg.exec(['-i', 'fragment.wav', '-af', 'aecho=0.8:0.88:60:0.4', 'reverbed_fragment.wav']);
+      await ffmpeg.exec(['-i', 'fragment.wav', '-af', effects[effect], 'edited_fragment.wav']);
 
       // Merge the modified fragment back into the original audio
       await ffmpeg.exec([
         '-i',
         'input.wav',
         '-i',
-        'reverbed_fragment.wav',
+        'edited_fragment.wav',
         '-filter_complex',
         `[0:a]atrim=end=${start},asetpts=PTS-STARTPTS[part1];[0:a]atrim=start=${end},asetpts=PTS-STARTPTS[part3];[part1][1:a][part3]concat=n=3:v=0:a=1[out]`,
         '-map',
@@ -46,7 +54,7 @@ const useFFmpeg = () => {
         'output.wav',
       ]);
     } else {
-      await ffmpeg.exec(['-i', 'input.wav', '-af', 'aecho=0.8:0.88:60:0.4', 'output.wav']);
+      await ffmpeg.exec(['-i', 'input.wav', '-af', effects[effect], 'output.wav']);
     }
 
     const fileData = await ffmpeg.readFile('output.wav');
