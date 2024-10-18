@@ -1,24 +1,24 @@
 import WavEncoder from 'wav-encoder';
 
-const cut = (buffer, start, end) => {
+const cut = (buffer: AudioBuffer, start: number, end: number) => {
   // Calculate the start and end sample indices
-  const sampleRate = buffer.sampleRate;
+  const { sampleRate } = buffer;
   const startSample = Math.floor(start * sampleRate);
   const endSample = Math.floor(end * sampleRate);
   const length = endSample - startSample;
 
   // Create a new buffer for the trimmed segment
   const cutBuffer = new AudioBuffer({
-    length: length,
+    length,
     numberOfChannels: buffer.numberOfChannels,
-    sampleRate: sampleRate,
+    sampleRate,
   });
 
   const remainingLength = buffer.length - length;
   const remainingBuffer = new AudioBuffer({
     length: remainingLength,
     numberOfChannels: buffer.numberOfChannels,
-    sampleRate: sampleRate,
+    sampleRate,
   });
 
   // Copy the channel data from the original buffer to the new buffer
@@ -40,8 +40,8 @@ const cut = (buffer, start, end) => {
   return { cutBuffer, remainingBuffer };
 };
 
-const paste = (buffer, bufferToPaste, start) => {
-  const sampleRate = buffer.sampleRate;
+const paste = (buffer: AudioBuffer, bufferToPaste: AudioBuffer, start: number) => {
+  const { sampleRate } = buffer;
   const startSample = Math.floor(start * sampleRate);
   const newLength = buffer.length + bufferToPaste.length;
 
@@ -49,7 +49,7 @@ const paste = (buffer, bufferToPaste, start) => {
   const combinedBuffer = new AudioBuffer({
     length: newLength,
     numberOfChannels: buffer.numberOfChannels,
-    sampleRate: sampleRate,
+    sampleRate,
   });
 
   // Copy the channel data from buffer1 and buffer2 to the new buffer
@@ -62,24 +62,28 @@ const paste = (buffer, bufferToPaste, start) => {
     // Copy the data from buffer2
     combinedBuffer.copyToChannel(channelData2, channel, startSample);
     // Copy the remaining data from buffer1 after the paste segment
-    combinedBuffer.copyToChannel(channelData1.subarray(startSample), channel, startSample + bufferToPaste.length);
+    combinedBuffer.copyToChannel(
+      channelData1.subarray(startSample),
+      channel,
+      startSample + bufferToPaste.length,
+    );
   }
 
   return combinedBuffer;
 };
 
-const copy = (buffer, start, end) => {
+const copy = (buffer: AudioBuffer, start: number, end: number) => {
   // Calculate the start and end sample indices
-  const sampleRate = buffer.sampleRate;
+  const { sampleRate } = buffer;
   const startSample = Math.floor(start * sampleRate);
   const endSample = Math.floor(end * sampleRate);
   const length = endSample - startSample;
 
   // Create a new buffer for the copied segment
   const copyBuffer = new AudioBuffer({
-    length: length,
+    length,
     numberOfChannels: buffer.numberOfChannels,
-    sampleRate: sampleRate,
+    sampleRate,
   });
 
   // Copy the channel data from the original buffer to the new buffer
@@ -91,10 +95,12 @@ const copy = (buffer, start, end) => {
   return copyBuffer;
 };
 
-const encodeToWave = async buffer =>
-  await WavEncoder.encode({
+const encodeToWave = async (buffer: AudioBuffer) =>
+  WavEncoder.encode({
     sampleRate: buffer.sampleRate,
-    channelData: Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i)),
+    channelData: Array.from({ length: buffer.numberOfChannels }, (_, i) =>
+      buffer.getChannelData(i),
+    ),
   });
 
-export { cut, copy, paste, encodeToWave };
+export { copy, cut, encodeToWave, paste };

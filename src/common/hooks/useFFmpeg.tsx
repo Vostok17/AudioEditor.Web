@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile } from '@ffmpeg/util';
+import Effects from 'common/content/effects';
 
 const useFFmpeg = () => {
   const ffmpegRef = useRef(new FFmpeg());
@@ -8,19 +9,14 @@ const useFFmpeg = () => {
   useEffect(() => {
     const ffmpeg = ffmpegRef.current;
     ffmpeg.load();
-    console.log('ffmpeg loaded');
   }, []);
 
-  const effects = {
-    reverb: 'aecho=0.8:0.88:60:0.4',
-    echo: 'aecho=0.8:0.9:1000:0.3',
-    normalize: 'dynaudnorm',
-    bassBoost: 'bass=g=20',
-    trebleBoost: 'treble=g=5',
-    chorus: 'chorus=0.7:0.9:55:0.4:0.25:2',
-  };
-
-  const applyEffect = async (sourceUrl, effect, start = null, end = null) => {
+  const applyEffect = async (
+    sourceUrl: string,
+    effect: Effects,
+    start: number | null = null,
+    end: number | null = null,
+  ) => {
     const ffmpeg = ffmpegRef.current;
     await ffmpeg.writeFile('input.wav', await fetchFile(sourceUrl));
 
@@ -39,7 +35,7 @@ const useFFmpeg = () => {
       ]);
 
       // Apply reverb effect to the extracted fragment
-      await ffmpeg.exec(['-i', 'fragment.wav', '-af', effects[effect], 'edited_fragment.wav']);
+      await ffmpeg.exec(['-i', 'fragment.wav', '-af', effect, 'edited_fragment.wav']);
 
       // Merge the modified fragment back into the original audio
       await ffmpeg.exec([
@@ -54,14 +50,10 @@ const useFFmpeg = () => {
         'output.wav',
       ]);
     } else {
-      await ffmpeg.exec(['-i', 'input.wav', '-af', effects[effect], 'output.wav']);
+      await ffmpeg.exec(['-i', 'input.wav', '-af', effect, 'output.wav']);
     }
 
-    const fileData = await ffmpeg.readFile('output.wav');
-
-    // @ts-ignore
-    const data = new Uint8Array(fileData);
-    return data;
+    return ffmpeg.readFile('output.wav');
   };
 
   return { applyEffect };
