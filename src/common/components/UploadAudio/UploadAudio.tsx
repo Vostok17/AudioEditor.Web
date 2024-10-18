@@ -1,14 +1,14 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useContext, useEffect, useRef, useState } from 'react';
 import { Row } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
-import { FileContext } from 'src/common/contexts/fileContext';
+import { FileContext } from 'common/contexts/fileContext';
 import './upload-audio.css';
 
 const UploadAudio = () => {
-  const inputFile = useRef(null);
+  const inputFile = useRef<HTMLInputElement>(null);
   const { setFileUrl } = useContext(FileContext);
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,11 +19,15 @@ const UploadAudio = () => {
   }, [file, navigate, setFileUrl]);
 
   const handleButtonClick = () => {
-    inputFile.current.click();
+    if (inputFile.current) {
+      inputFile.current.click();
+    }
   };
 
-  const handleFileUpload = e => {
-    setFile(URL.createObjectURL(e.target.files[0]));
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(URL.createObjectURL(e.target.files[0]));
+    }
   };
 
   return (
@@ -33,7 +37,11 @@ const UploadAudio = () => {
           <h1 className="upload-audio__header">Upload your audio here!</h1>
         </Row>
         <Row className="justify-content-center mt-3 md-col-2">
-          <button className="upload-audio__upload-btn glow-on-hover" onClick={handleButtonClick}>
+          <button
+            type="button"
+            className="upload-audio__upload-btn glow-on-hover"
+            onClick={handleButtonClick}
+          >
             Upload
           </button>
         </Row>

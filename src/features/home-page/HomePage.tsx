@@ -1,6 +1,6 @@
 import { Container, Row } from 'react-bootstrap';
 import { LibraryMusic } from '@mui/icons-material';
-import UploadAudio from 'src/common/components/UploadAudio/UploadAudio';
+import UploadAudio from 'common/components/UploadAudio/UploadAudio';
 import './home-page.css';
 
 const HomePage = () => (

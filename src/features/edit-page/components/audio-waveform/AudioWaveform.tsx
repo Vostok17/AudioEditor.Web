@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { Container, Row } from 'react-bootstrap';
 import {
   DownloadOutlined,
@@ -17,17 +17,19 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 import Slider from '@mui/material/Slider';
 import { Button, Typography } from 'antd';
-import useClickOutside from 'src/common/hooks/useClickOutside';
-import useFFmpeg from 'src/common/hooks/useFFmpeg';
-import useWavesurfer from 'src/common/hooks/useWavesurfer';
-import { encodeToWave } from 'src/common/utils/audioBuffer';
+import Effects from 'common/content/effects';
+import useClickOutside from 'common/hooks/useClickOutside';
+import useFFmpeg from 'common/hooks/useFFmpeg';
+import useWavesurfer from 'common/hooks/useWavesurfer';
+import { encodeToWave } from 'common/utils/audioBuffer';
 import './audio-waveform.css';
 
-const AudioWaveform = ({ effect, onEffectApplied }) => {
-  /**
-   * @type {{ wavesurfer: WaveSurfer|null, regions: RegionsPlugin|null }}
-   */
-  // @ts-ignore
+interface AudioWaveformProps {
+  effectToApply: Effects | null;
+  onEffectApplied: () => void;
+}
+
+const AudioWaveform: FC<AudioWaveformProps> = ({ effectToApply, onEffectApplied }) => {
   const { wavesurfer, regions, handleCopy, handleCut, handlePaste, handleDownload, bufferToPaste } =
     useWavesurfer('#waveform');
   const wavesurferRef = useRef(null);
@@ -55,10 +57,11 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
     };
   }, [regions, wavesurfer]);
 
-  const handleEffectApply = async effect => {
-    console.log(effect.effect);
+  const handleEffectApply = async (effect: Effects) => {
     if (!wavesurfer) return;
-    const url = URL.createObjectURL(new Blob([await encodeToWave(wavesurfer.getDecodedData())], { type: 'audio/wav' }));
+    const url = URL.createObjectURL(
+      new Blob([await encodeToWave(wavesurfer.getDecodedData()!)], { type: 'audio/wav' }),
+    );
     const existingRegions = regions.getRegions();
 
     let data;
@@ -69,23 +72,7 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
       data = await applyEffect(url, effect, region.start, region.end);
     }
 
-    wavesurfer.loadBlob(new Blob([data.buffer], { type: 'audio/wav' }));
-  };
-
-  const handleVolumeSlider = e => {
-    setVolume(e.target.value);
-    wavesurfer.setVolume(volume);
-  };
-
-  const handleZoomSlider = e => {
-    setZoom(e.target.value);
-    wavesurfer.zoom(zoom);
-  };
-
-  const handlePlaybackSpeedChange = e => {
-    const newSpeed = parseFloat(e.target.value);
-    setPlaybackSpeed(newSpeed);
-    wavesurfer.setPlaybackRate(newSpeed);
+    wavesurfer.loadBlob(new Blob([data], { type: 'audio/wav' }));
   };
 
   return (
@@ -94,9 +81,9 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
         <Button
           type="primary"
           className="mt-4 mb-3"
-          disabled={!effect}
+          disabled={!effectToApply}
           onClick={() => {
-            handleEffectApply(effect);
+            handleEffectApply(effectToApply!);
             onEffectApplied();
           }}
         >
@@ -104,23 +91,23 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
         </Button>
 
         <Row className="mb-5">
-          <div ref={wavesurferRef} id="waveform"></div>
+          <div ref={wavesurferRef} id="waveform" />
         </Row>
         <Row className="md-col-3 mb-3">
           <div className="controls-bar">
-            <Button type="primary" onClick={() => wavesurfer.seekTo(0)}>
+            <Button type="primary" onClick={() => wavesurfer?.seekTo(0)}>
               <Start style={{ transform: 'rotate(180deg)' }} />
             </Button>
-            <Button type="primary" onClick={() => wavesurfer.skip(-5)}>
+            <Button type="primary" onClick={() => wavesurfer?.skip(-5)}>
               <FastRewind />
             </Button>
-            <Button type="primary" onClick={() => wavesurfer.playPause()}>
+            <Button type="primary" onClick={() => wavesurfer?.playPause()}>
               {isPlaying ? <Pause /> : <PlayArrow />}
             </Button>
-            <Button type="primary" onClick={() => wavesurfer.skip(5)}>
+            <Button type="primary" onClick={() => wavesurfer?.skip(5)}>
               <FastForward />
             </Button>
-            <Button type="primary" onClick={() => wavesurfer.seekTo(1)}>
+            <Button type="primary" onClick={() => wavesurfer?.seekTo(1)}>
               <Start />
             </Button>
           </div>
@@ -131,7 +118,7 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
               onClick={() => {
                 handleCut();
                 setIsPlaying(false);
-                wavesurfer.seekTo(0);
+                wavesurfer?.seekTo(0);
               }}
             >
               <ContentCutIcon />
@@ -147,7 +134,12 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
             </Button>
           </div>
         </Row>
-        <Button onClick={handleDownload} type="primary" icon={<DownloadOutlined />} className="download-btn">
+        <Button
+          onClick={handleDownload}
+          type="primary"
+          icon={<DownloadOutlined />}
+          className="download-btn"
+        >
           Download
         </Button>
         <Row className="controls-bar__sliders">
@@ -160,14 +152,31 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
                 <VolumeOffRounded className="sliders-container__icon" />
               )}
             </div>
-            <Slider sx={{ width: '20%' }} min={0} max={1} step={0.001} value={volume} onChange={handleVolumeSlider} />
+            <Slider
+              sx={{ width: '20%' }}
+              min={0}
+              max={1}
+              step={0.001}
+              onChange={(e, value) => {
+                setVolume(value as number);
+                wavesurfer?.setVolume(volume);
+              }}
+            />
           </div>
           <div className="sliders-container__row">
             <div className="sliders-container__label">
               <Typography className="sliders-container__label">Zoom</Typography>
               <ZoomOutOutlined className="sliders-container__icon" />
             </div>
-            <Slider sx={{ width: '20%' }} min={1} max={1000} value={zoom} onChange={handleZoomSlider} />
+            <Slider
+              sx={{ width: '20%' }}
+              min={1}
+              max={1000}
+              onChange={(e, value) => {
+                setZoom(value as number);
+                wavesurfer?.zoom(zoom);
+              }}
+            />
           </div>
           <div className="sliders-container__row">
             <div className="sliders-container__label">
@@ -181,8 +190,10 @@ const AudioWaveform = ({ effect, onEffectApplied }) => {
               max={2.0}
               step={0.1}
               marks
-              value={playbackSpeed}
-              onChange={handlePlaybackSpeedChange}
+              onChange={(e, value) => {
+                setPlaybackSpeed(value as number);
+                wavesurfer?.setPlaybackRate(playbackSpeed);
+              }}
             />
           </div>
         </Row>
